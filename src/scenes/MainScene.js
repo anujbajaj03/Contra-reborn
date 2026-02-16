@@ -13,6 +13,7 @@ export class MainScene extends Phaser.Scene {
         this.initialWeapon = data.weaponType || 'NORMAL';
         this.stage = 1;
         this.totalScore = 0;
+        this.lives = 3;
     }
 
     create() {
@@ -75,14 +76,69 @@ export class MainScene extends Phaser.Scene {
         if (bullet.active) {
             this.createImpactSparks(bullet.x, bullet.y);
             bullet.kill();
-            this.cameras.main.shake(200, 0.02);
-            player.setTint(0xff0000);
-            this.time.delayedCall(200, () => player.clearTint());
-
-            // Push back
-            player.setVelocityY(-300);
-            player.setVelocityX(bullet.body.velocity.x > 0 ? 300 : -300);
+            this.handlePlayerDeath(player);
         }
+    }
+
+    handlePlayerDeath(player) {
+        if (player.isDead) return;
+        player.isDead = true;
+
+        this.cameras.main.shake(300, 0.04);
+        this.lives--;
+        this.livesText.setText(`LIVES: ${this.lives}`);
+
+        // Lose Power-up
+        player.updateWeaponConfig('NORMAL');
+        this.weaponHUDText.setText(`WEAPON: NORMAL`);
+
+        // Death Visuals (Flicker/Tint)
+        player.setTint(0xff0000);
+        player.setVelocity(0, -400); // Hop up
+        player.body.checkCollision.none = true;
+
+        if (this.lives > 0) {
+            this.time.delayedCall(1000, () => this.respawnPlayer(player));
+        } else {
+            this.time.delayedCall(1000, () => this.gameOver());
+        }
+    }
+
+    respawnPlayer(player) {
+        player.isDead = false;
+        player.clearTint();
+        player.body.checkCollision.none = false;
+
+        // Find safe spot (simplified: just revert to start or keep current X with safe Y)
+        // Ideally we'd find a checkpoint, but for now let's drop them from the sky near current X
+        const safeX = Math.max(100, this.cameras.main.scrollX + 100);
+        player.setPosition(safeX, 200);
+        player.setVelocity(0, 0);
+
+        // Temporary Invulnerability
+        player.setAlpha(0.5);
+        this.tweens.add({
+            targets: player,
+            alpha: 1,
+            duration: 200,
+            repeat: 10,
+            onComplete: () => {
+                player.setAlpha(1);
+            }
+        });
+    }
+
+    gameOver() {
+        this.add.text(this.cameras.main.scrollX + 400, 300, 'GAME OVER', {
+            fontSize: '64px',
+            fill: '#ff0000',
+            fontFamily: 'Courier New',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        this.time.delayedCall(3000, () => {
+            this.scene.restart({ playerName: this.playerName });
+        });
     }
 
     createBoss() {
@@ -164,6 +220,12 @@ export class MainScene extends Phaser.Scene {
             fill: '#0f0',
             fontFamily: 'Courier New'
         }).setScrollFactor(0);
+
+        this.livesText = this.add.text(16, 100, `LIVES: ${this.lives}`, {
+            fontSize: '18px',
+            fill: '#f00',
+            fontFamily: 'Courier New'
+        }).setScrollFactor(0);
     }
 
     update(time, delta) {
@@ -230,10 +292,8 @@ export class MainScene extends Phaser.Scene {
     }
 
     handlePlayerEnemyCollision(player, enemy) {
-        if (enemy.active) {
-            this.cameras.main.shake(200, 0.02);
-            player.setPosition(100, 450);
-            // Optionally reduce lives here
+        if (enemy.active && !player.isDead) {
+            this.handlePlayerDeath(player);
         }
     }
 
