@@ -176,29 +176,76 @@ export class MainScene extends Phaser.Scene {
         // Deep Forest Sky
         this.add.rectangle(1000, 300, 2000, 600, 0x011a01).setScrollFactor(0);
 
+        // Waterfalls in the far background
+        for (let i = 0; i < 5; i++) {
+            const x = 300 + i * 400 + Math.random() * 100;
+            const waterfall = this.add.graphics({ x: x });
+            waterfall.fillStyle(0x00ffff, 0.4);
+            waterfall.fillRect(0, 0, 80, 600);
+            waterfall.setScrollFactor(0.1);
+
+            // Waterfall "shimmer" animation
+            this.tweens.add({
+                targets: waterfall,
+                alpha: 0.2,
+                duration: 500 + Math.random() * 500,
+                yoyo: true,
+                repeat: -1
+            });
+        }
+
         // Distant Trees (Dark Green)
-        for (let i = 0; i < 30; i++) {
-            const x = i * 100 + Math.random() * 50;
-            const h = 300 + Math.random() * 200;
+        for (let i = 0; i < 40; i++) {
+            const x = i * 80 + Math.random() * 40;
+            const h = 350 + Math.random() * 200;
             const tree = this.add.graphics({ x: x });
             tree.fillStyle(0x0a240a);
-            tree.fillRect(-20, 600 - h, 40, h); // Trunk
+            tree.fillRect(-25, 600 - h, 50, h); // Trunk
+
             tree.fillStyle(0x051a05);
-            tree.fillCircle(0, 600 - h, 60); // Leaves
+            // Multi-layered leaves for "lush" look
+            tree.fillCircle(0, 600 - h, 70);
+            tree.fillCircle(-30, 600 - h + 20, 50);
+            tree.fillCircle(30, 600 - h + 20, 50);
+
             tree.setScrollFactor(0.2);
         }
 
-        // Mid-ground Forest (Green)
-        for (let i = 0; i < 20; i++) {
-            const x = i * 150 + Math.random() * 100;
-            const h = 200 + Math.random() * 150;
+        // Mid-ground Forest (Lush Green)
+        for (let i = 0; i < 25; i++) {
+            const x = i * 120 + Math.random() * 80;
+            const h = 250 + Math.random() * 150;
             const tree = this.add.graphics({ x: x });
-            tree.fillStyle(0x1a3300);
+
+            // Trunk
+            tree.fillStyle(0x1a0d00);
             tree.fillRect(-15, 600 - h, 30, h);
+
+            // Lush Foliage
             tree.fillStyle(0x2d4d1a);
-            tree.fillTriangle(-50, 600 - h, 50, 600 - h, 0, 600 - h - 100);
+            tree.fillEllipse(0, 600 - h, 100, 140);
+            tree.fillStyle(0x3e6b24);
+            tree.fillEllipse(0, 600 - h - 30, 60, 80);
+
             tree.setScrollFactor(0.5);
         }
+    }
+
+    createFloatingScore(x, y, amount) {
+        const text = this.add.text(x, y, `+${amount}`, {
+            fontSize: '20px',
+            fill: '#ffff00',
+            fontFamily: 'Courier New',
+            fontStyle: 'bold'
+        });
+
+        this.tweens.add({
+            targets: text,
+            y: y - 50,
+            alpha: 0,
+            duration: 800,
+            onComplete: () => text.destroy()
+        });
     }
 
     setupHUD() {
@@ -244,6 +291,7 @@ export class MainScene extends Phaser.Scene {
             bullet.kill();
             if (enemy.takeDamage()) {
                 this.totalScore += 100;
+                this.createFloatingScore(enemy.x, enemy.y, 100);
                 this.updateScore();
             }
         }
@@ -264,6 +312,7 @@ export class MainScene extends Phaser.Scene {
                 turret.body.enable = false;
                 this.bossAliveCount--;
                 this.totalScore += 1000;
+                this.createFloatingScore(turret.x, turret.y, 1000);
                 this.updateScore();
 
                 if (this.bossAliveCount <= 0) {

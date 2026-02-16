@@ -30,6 +30,13 @@ export class WelcomeScene extends Phaser.Scene {
         const htmlContent = `
             <div style="color: white; font-family: 'Courier New'; text-align: center; background: rgba(0,0,0,0.8); padding: 20px; border: 2px solid #ff0000; border-radius: 10px; width: 300px;">
                 <h3 style="margin-top: 0; color: #ff0000;">MISSION BRIEFING</h3>
+                <div style="background: rgba(255,0,0,0.1); border: 1px solid #ff0000; padding: 10px; margin-bottom: 15px; font-size: 12px; text-align: left;">
+                    <strong style="color: #ff0000; display: block; margin-bottom: 5px;">RULES:</strong>
+                    - 3 LIVES PER MISSION<br>
+                    - ONE HIT = DEATH<br>
+                    - LOSE WEAPON ON DEATH<br>
+                    - ENEMIES ARE ARMED & DANGEROUS
+                </div>
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; margin-bottom: 5px;">SOLDIER NAME:</label>
                     <input type="text" id="playerName" placeholder="ENTER NAME" style="width: 100%; padding: 5px; background: #222; color: #fff; border: 1px solid #555;">
