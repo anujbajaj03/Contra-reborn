@@ -66,6 +66,12 @@ export class MainScene extends Phaser.Scene {
         // HUD
         this.setupHUD();
 
+        // Audio
+        if (!this.sound.get('bgm_jungle')) {
+            this.bgm = this.sound.add('bgm_jungle', { loop: true, volume: 0.5 });
+            this.bgm.play();
+        }
+
         // Camera
         this.cameras.main.startFollow(this.player, true, 0.05, 0.05);
         this.cameras.main.setBounds(0, 0, 2000, 600);
@@ -86,6 +92,7 @@ export class MainScene extends Phaser.Scene {
         if (player.isDead) return;
         player.isDead = true;
 
+        this.sound.play('sfx_death');
         this.cameras.main.shake(300, 0.04);
         this.lives--;
         this.livesText.setText(`LIVES: ${this.lives}`);
@@ -293,6 +300,7 @@ export class MainScene extends Phaser.Scene {
             this.createImpactSparks(bullet.x, bullet.y);
             bullet.kill();
             if (enemy.takeDamage()) {
+                this.sound.play('sfx_explosion', { volume: 0.5 });
                 this.totalScore += 100;
                 this.createFloatingScore(enemy.x, enemy.y, 100);
                 this.updateScore();
@@ -309,6 +317,7 @@ export class MainScene extends Phaser.Scene {
             this.time.delayedCall(50, () => turret.setFillStyle(0x888888));
 
             if (turret.hp <= 0) {
+                this.sound.play('sfx_explosion');
                 turret.isAlive = false;
                 turret.setVisible(false);
                 turret.active = false;
@@ -350,6 +359,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     handlePlayerPowerUpCollision(player, powerUp) {
+        this.sound.play('sfx_powerup');
         player.applyPowerUp(powerUp.type);
         powerUp.destroy();
     }

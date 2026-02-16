@@ -69,6 +69,12 @@ export class WelcomeScene extends Phaser.Scene {
             }
         });
 
+        // Audio (Start Title BGM)
+        if (!this.sound.get('bgm_jungle')) {
+            this.bgm = this.sound.add('bgm_jungle', { loop: true, volume: 0.5 });
+            this.bgm.play();
+        }
+
         // Instructions
         this.add.text(width / 2, height - 50, 'CONTROLS: WASD to MOVE | SPACE to SHOOT', {
             fontSize: '16px',

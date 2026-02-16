@@ -202,6 +202,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (time < this.lastFired + this.fireRate) return;
         this.lastFired = time;
 
+        this.scene.sound.play('sfx_shoot', { volume: 0.3 });
+
         const { x, y } = this;
         const { x: dx, y: dy } = this.shootDirection;
 

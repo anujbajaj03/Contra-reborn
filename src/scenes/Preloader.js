@@ -30,7 +30,12 @@ export class Preloader extends Phaser.Scene {
         this.load.image('ground', 'https://labs.phaser.io/assets/sprites/platform.png');
         this.load.image('bullet', 'https://labs.phaser.io/assets/sprites/bullets/bullet5.png');
 
-        // We'll replace these with cyberpunk assets soon
+        // Audio Assets (Retro 8-bit style)
+        this.load.audio('bgm_jungle', 'https://cdn.pixabay.com/audio/2022/03/10/audio_c3523ef30d.mp3'); // 8-bit style loop
+        this.load.audio('sfx_shoot', 'https://labs.phaser.io/assets/audio/SoundEffects/p-shot.wav');
+        this.load.audio('sfx_explosion', 'https://labs.phaser.io/assets/audio/SoundEffects/explosion.mp3');
+        this.load.audio('sfx_death', 'https://labs.phaser.io/assets/audio/SoundEffects/death.mp3');
+        this.load.audio('sfx_powerup', 'https://labs.phaser.io/assets/audio/SoundEffects/key.wav');
     }
 
     create() {
