@@ -18,9 +18,12 @@ export class PowerUp extends Phaser.Physics.Arcade.Sprite {
 
     getTintColor(type) {
         switch (type) {
-            case 'S': return 0xff00ff; // Magenta
-            case 'L': return 0x00ffff; // Cyan
-            case 'M': return 0xffff00; // Yellow
+            case 'S': return 0xff00ff; // Spread - Magenta
+            case 'L': return 0x00ffff; // Laser - Cyan
+            case 'M': return 0x0000ff; // Machine Gun - Blue
+            case 'F': return 0xffaa00; // Fireball - Orange
+            case 'R': return 0x00ff00; // Rapid - Green
+            case 'B': return 0xffffff; // Barrier - White (Flashes)
             default: return 0xffffff;
         }
     }
@@ -28,6 +31,11 @@ export class PowerUp extends Phaser.Physics.Arcade.Sprite {
     update(time, delta) {
         this.time += delta;
         this.x = this.baseX + Math.sin(this.time / 500) * 50;
+
+        if (this.type === 'B') {
+            // Flashing effect for Barrier
+            this.setAlpha(Math.sin(this.time / 50) > 0 ? 1 : 0.5);
+        }
     }
 }
 
@@ -41,7 +49,7 @@ export class PowerUpManager {
     }
 
     spawnPowerUp(x, y) {
-        const types = ['S', 'L', 'M'];
+        const types = ['S', 'L', 'M', 'F', 'R', 'B'];
         const type = types[Math.floor(Math.random() * types.length)];
         const powerUp = new PowerUp(this.scene, x, y, type);
         this.powerUps.add(powerUp);

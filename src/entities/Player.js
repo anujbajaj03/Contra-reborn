@@ -28,6 +28,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         this.lastFired = 0;
         this.fireRate = 200;
+        this.bulletSpeedMultiplier = 1;
+        this.isInvulnerable = false;
+        this.invulnerabilityTimer = null;
 
         // Weapon config
         this.updateWeaponConfig(weaponType);
@@ -86,6 +89,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     updateWeaponConfig(type) {
         this.weaponType = type;
+        this.bulletSpeedMultiplier = 1; // Reset multiplier when changing weapons
+
         switch (type) {
             case 'SPREAD':
                 this.fireRate = 400;
@@ -93,9 +98,44 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             case 'LASER':
                 this.fireRate = 100;
                 break;
+            case 'MACHINE_GUN':
+                this.fireRate = 80; // Very fast
+                break;
+            case 'FIREBALL':
+                this.fireRate = 300;
+                break;
+            case 'RAPID':
+                this.bulletSpeedMultiplier = 2; // Extra fast bullets
+                // Rapid often improves the CURRENT weapon, but for simplicity we'll keep it as a type 
+                // or just boost the firing speed/velocity. Let's make it a general boost.
+                this.fireRate = 150;
+                break;
+            case 'BARRIER':
+                this.activateBarrier();
+                break;
             default:
                 this.fireRate = 200;
         }
+    }
+
+    activateBarrier() {
+        if (this.isInvulnerable) return;
+        this.isInvulnerable = true;
+
+        // Visual feedback
+        this.scene.tweens.add({
+            targets: this.visuals,
+            alpha: 0.3,
+            duration: 100,
+            yoyo: true,
+            repeat: -1
+        });
+
+        this.scene.time.delayedCall(5000, () => {
+            this.isInvulnerable = false;
+            this.scene.tweens.killTweensOf(this.visuals);
+            this.visuals.setAlpha(1);
+        });
     }
 
     update(cursors, keys, time) {
@@ -171,21 +211,34 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.spawnBullet(x, y, Math.cos(angle), Math.sin(angle));
             }
         } else if (this.weaponType === 'LASER') {
-            this.spawnBullet(x, y, dx, dy, true);
+            this.spawnBullet(x, y, dx, dy, 'LASER');
+        } else if (this.weaponType === 'FIREBALL') {
+            this.spawnBullet(x, y, dx, dy, 'FIREBALL');
         } else {
             this.spawnBullet(x, y, dx, dy);
         }
     }
 
-    spawnBullet(x, y, dx, dy, isLaser = false) {
+    spawnBullet(x, y, dx, dy, type = 'NORMAL') {
         const bullet = this.scene.bullets.get(x, y);
         if (bullet) {
-            bullet.fire(x, y, dx, dy, isLaser);
+            const speedMultiplier = this.bulletSpeedMultiplier;
+            bullet.fire(x, y, dx, dy, type, speedMultiplier);
         }
     }
 
     applyPowerUp(type) {
-        this.updateWeaponConfig(type === 'S' ? 'SPREAD' : type === 'L' ? 'LASER' : 'NORMAL');
+        let weaponType = 'NORMAL';
+        switch (type) {
+            case 'S': weaponType = 'SPREAD'; break;
+            case 'L': weaponType = 'LASER'; break;
+            case 'M': weaponType = 'MACHINE_GUN'; break;
+            case 'F': weaponType = 'FIREBALL'; break;
+            case 'R': weaponType = 'RAPID'; break;
+            case 'B': weaponType = 'BARRIER'; break;
+        }
+        this.updateWeaponConfig(weaponType);
+
         // Visual feedback
         this.visuals.setAlpha(0.5);
         this.scene.time.delayedCall(100, () => this.visuals.setAlpha(1));
@@ -199,20 +252,23 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
         scene.physics.add.existing(this);
     }
 
-    fire(x, y, dx, dy, isLaser = false) {
+    fire(x, y, dx, dy, type = 'NORMAL', speedMultiplier = 1) {
         this.body.reset(x, y);
         this.setActive(true);
         this.setVisible(true);
+        this.bulletType = type;
+        this.spawnTime = this.scene.time.now;
 
-        const speed = isLaser ? 800 : 400;
+        let speed = 400 * speedMultiplier;
+        if (type === 'LASER') speed = 800 * speedMultiplier;
 
         // Visuals
-        if (isLaser) {
+        if (type === 'LASER') {
             this.setTint(0x00ffff);
             this.setScale(4, 1);
             this.setRotation(Math.atan2(dy, dx));
 
-            // Laser trail (Graphics)
+            // Laser trail
             this.scene.time.addEvent({
                 delay: 20,
                 callback: () => {
@@ -229,13 +285,16 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
                 },
                 repeat: 10
             });
-
+        } else if (type === 'FIREBALL') {
+            this.setTint(0xffaa00);
+            this.setScale(2);
+            this.setRotation(0);
         } else {
-            this.setTint(0xff4444); // Bright red-orange
+            this.setTint(0xff4444);
             this.setScale(1.5);
             this.setRotation(Math.atan2(dy, dx));
 
-            // Bullet trail (fading circles)
+            // Bullet trail
             this.scene.time.addEvent({
                 delay: 50,
                 callback: () => {
@@ -270,6 +329,19 @@ export class Bullet extends Phaser.Physics.Arcade.Sprite {
 
     preUpdate(time, delta) {
         super.preUpdate(time, delta);
+
+        if (this.bulletType === 'FIREBALL') {
+            const age = time - this.spawnTime;
+            const offset = Math.sin(age / 50) * 40;
+            // Corkscrew effect: add oscillation perpendicular to velocity
+            const angle = this.body.angle;
+            const perpAngle = angle + (Math.PI / 2);
+            // Since Arcade Physics velocity is already set, we manually offset position
+            // This is a bit hacky but works for a single sprite
+            this.y += Math.sin(age / 100) * 5;
+            this.setRotation(age / 100);
+        }
+
         if (this.y < 0 || this.y > 600 || this.x < 0 || this.x > 2000) {
             this.kill();
         }

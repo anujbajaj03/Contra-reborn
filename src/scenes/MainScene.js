@@ -76,7 +76,9 @@ export class MainScene extends Phaser.Scene {
         if (bullet.active) {
             this.createImpactSparks(bullet.x, bullet.y);
             bullet.kill();
-            this.handlePlayerDeath(player);
+            if (!player.isInvulnerable) {
+                this.handlePlayerDeath(player);
+            }
         }
     }
 
@@ -278,7 +280,8 @@ export class MainScene extends Phaser.Scene {
     update(time, delta) {
         if (this.player) {
             this.player.update(this.cursors, this.keys, time);
-            this.weaponHUDText.setText(`WEAPON: ${this.player.weaponType}`);
+            const weaponName = this.player.isInvulnerable ? 'BARRIER' : this.player.weaponType;
+            this.weaponHUDText.setText(`WEAPON: ${weaponName}`);
         }
         if (this.enemyManager) {
             this.enemyManager.update(time);
@@ -341,7 +344,7 @@ export class MainScene extends Phaser.Scene {
     }
 
     handlePlayerEnemyCollision(player, enemy) {
-        if (enemy.active && !player.isDead) {
+        if (enemy.active && !player.isDead && !player.isInvulnerable) {
             this.handlePlayerDeath(player);
         }
     }
