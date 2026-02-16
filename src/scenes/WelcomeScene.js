@@ -58,8 +58,12 @@ export class WelcomeScene extends Phaser.Scene {
         form.addListener('click');
         form.on('click', (event) => {
             if (event.target.id === 'startGame') {
-                const playerName = document.getElementById('playerName').value || 'RECRUIT';
+                let playerName = document.getElementById('playerName').value.trim() || 'RECRUIT';
                 const weaponType = document.getElementById('weaponType').value;
+
+                // Sanitization: Remove special characters, limit length to 12
+                playerName = playerName.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 12).toUpperCase();
+                if (!playerName) playerName = 'RECRUIT';
 
                 this.scene.start('MainScene', { playerName, weaponType });
             }
